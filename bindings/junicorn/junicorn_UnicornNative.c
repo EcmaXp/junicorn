@@ -29,9 +29,10 @@ typedef enum juc_hook_cb_type {
 } juc_hook_cb_type;
 
 static void juc_throw(JNIEnv *env, uc_err code) {
+	class_juc_exception = (*env)->FindClass(env, "junicorn/UnicornException"); // always find class?
 	const char *message = uc_strerror(code);
-	jobject exc = (*env)->NewObject(env, class_juc_exception, method_juc_exception_init, (jint)code);
-	(*env)->Throw(env, exc);
+	// jobject exc = (*env)->NewObject(env, class_juc_exception, method_juc_exception_init, (jint)code);
+	(*env)->ThrowNew(env, class_juc_exception, message);
 }
 
 static jint juc_hook_cb(JavaVM *jvm, uc_engine *engine, void *user_data, jlong arg1, jlong arg2, jlong arg3, jlong arg4)
@@ -195,21 +196,21 @@ JNIEXPORT void JNICALL Java_junicorn_UnicornNative_uc_1reg_1write
 /*
  * Class:     junicorn_UnicornNative
  * Method:    uc_mem_read
- * Signature: (JJ[BJ)V
+ * Signature: (JJJ)[B
  */
-JNIEXPORT void JNICALL Java_junicorn_UnicornNative_uc_1mem_1read
-(JNIEnv *env, jclass cls, jlong engine, jlong address, jbyteArray data, jlong size)
+JNIEXPORT jbyteArray JNICALL Java_junicorn_UnicornNative_uc_1mem_1read
+(JNIEnv *env, jclass cls, jlong engine, jlong address, jlong size)
 {
-	jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
-	jsize arraySize = (*env)->GetArrayLength(env, data);
-	size_t memSize = min(arraySize, size);
+	jbyteArray arr = (*env)->NewByteArray(env, (jsize)size);
+	jbyte *bytes = (*env)->GetByteArrayElements(env, arr, NULL);
  	uc_engine *uc = (uc_engine *)engine;
-	uc_err code = uc_mem_read(uc, (uint64_t)address, (void *)bytes, memSize);
+	uc_err code = uc_mem_read(uc, (uint64_t)address, (void *)bytes, (size_t)size);
+	(*env)->ReleaseByteArrayElements(env, arr, bytes, 0);
 	if (code != UC_ERR_OK) {
 		juc_throw(env, code);
+		return NULL;
 	}
-	(*env)->SetByteArrayRegion(env, data, 0, memSize, bytes);
-	(*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
+	return arr;
 }
 
 /*
@@ -552,4 +553,3 @@ JNIEXPORT jobjectArray JNICALL Java_junicorn_UnicornNative_uc_1mem_1regions
 	uc_free(regions);
 	return arr;
 }
-

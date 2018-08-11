@@ -82,10 +82,10 @@ JNIEXPORT void JNICALL Java_junicorn_UnicornNative_uc_1reg_1write
 /*
  * Class:     junicorn_UnicornNative
  * Method:    uc_mem_read
- * Signature: (JJ[BJ)V
+ * Signature: (JJJ)[B
  */
-JNIEXPORT void JNICALL Java_junicorn_UnicornNative_uc_1mem_1read
-  (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_junicorn_UnicornNative_uc_1mem_1read
+  (JNIEnv *, jclass, jlong, jlong, jlong);
 
 /*
  * Class:     junicorn_UnicornNative
